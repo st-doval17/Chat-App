@@ -43,7 +43,7 @@ const Start = ({ navigation }) => {
             style={[
               styles.colorOption,
               { backgroundColor: "#090C08" },
-              backgroundColor === "#090C08" && styles.selectedColorOption, // Apply the selected style conditionally
+              backgroundColor === "#090C08" && styles.selectedColorOption,
             ]}
             onPress={() => setChatBackgroundColor("#090C08")}
             activeOpacity={1} // Disable touch feedback
@@ -143,13 +143,13 @@ const styles = StyleSheet.create({
     margin: 5,
   },
   colorOptionsLabel: {
-    fontSize: 14, // You can adjust the font size if needed
-    color: "rgba(255, 255, 255, 0.5)", // Adjust the color as needed
+    fontSize: 14,
+    color: "#FFFFFF",
     marginTop: -7, // Adjust the marginTop to raise or lower the label
-    marginBottom: 5, // Optional, add marginBottom for spacing
+    marginBottom: 5, // for spacing
   },
   selectedColorOption: {
-    borderWidth: 2, // Add a border to the selected color option
+    borderWidth: 2,
     borderColor: "#FFFFFF", // White border color for the selected option
   },
   startButton: {
