@@ -25,15 +25,22 @@ const Chat = ({ route, navigation }) => {
 
   // Define the renderBubble function to customize bubble styles
   const renderBubble = (props) => {
+    let bubbleColor = "#000"; // Default bubble color
+
+    if (backgroundColor === "#090C08") {
+      // Check if the background color is black
+      bubbleColor = "#808080"; // Set bubble color to gray for black background
+    }
+
     return (
       <Bubble
         {...props}
         wrapperStyle={{
           right: {
-            backgroundColor: "#000", // Customize the right-side bubble background color
+            backgroundColor: bubbleColor, // Set the bubble color
           },
           left: {
-            backgroundColor: "#FFF", // Customize the left-side bubble background color
+            backgroundColor: "#FFF",
           },
         }}
       />
