@@ -88,7 +88,12 @@ const Start = ({ navigation }) => {
               name: name,
               backgroundColor: backgroundColor,
             })
-          }>
+          }
+          accessible={true}
+          accessibilityLabel="Start Chatting"
+          accessibilityHint="Navigates to the chat screen with the selected name and background color."
+          accessibilityRole="button" // Set the accessibility role to "button"
+        >
           <Text style={styles.startButtonText}>Start Chatting</Text>
         </TouchableOpacity>
       </View>
