@@ -1,23 +1,37 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, View, Platform } from 'react-native';
+import { Bubble, GiftedChat } from 'react-native-gifted-chat';
 import {
-  StyleSheet,
-  View,
-  Text,
-  KeyboardAvoidingView,
-  Platform,
-} from "react-native";
-import { Bubble, GiftedChat } from "react-native-gifted-chat";
+  addDoc,
+  collection,
+  query,
+  orderBy,
+  onSnapshot,
+} from 'firebase/firestore';
+import { initializeApp } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore';
+
+// Initialize Firebase with your configuration
+const firebaseConfig = {
+  apiKey: 'AIzaSyAx2DUa_kqFc92Vo47YkhiU3H3_EIJOKHc',
+  authDomain: 'chat-app-83e48.firebaseapp.com',
+  projectId: 'chat-app-83e48',
+  storageBucket: 'chat-app-83e48.appspot.com',
+  messagingSenderId: '848967168911',
+  appId: '1:848967168911:web:02cdbe1082e6c14c5951fa',
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app); // Initialize Firestore
 
 const Chat = ({ route, navigation }) => {
   // Extracting 'name' and 'backgroundColor' from route parameters
-  const { name, backgroundColor } = route.params;
+  const { name, backgroundColor, database } = route.params;
 
   // Function to handle sending new messages
   const onSend = (newMessages) => {
-    // Update the 'messages' state with new messages
-    setMessages((previousMessages) =>
-      GiftedChat.append(previousMessages, newMessages)
-    );
+    // Save the new message to Firestore using the 'database' prop (not props.db)
+    addDoc(collection(db, 'messages'), newMessages[0]); // Use 'db' here
   };
 
   // Messages state initialization using useState()
@@ -25,11 +39,11 @@ const Chat = ({ route, navigation }) => {
 
   // Define the renderBubble function to customize bubble styles
   const renderBubble = (props) => {
-    let bubbleColor = "#000"; // Default bubble color
+    let bubbleColor = '#000'; // Default bubble color
 
-    if (backgroundColor === "#090C08") {
+    if (backgroundColor === '#090C08') {
       // Check if the background color is black
-      bubbleColor = "#808080"; // Set bubble color to gray for black background
+      bubbleColor = '#808080'; // Set bubble color to gray for black background
     }
 
     return (
@@ -40,67 +54,50 @@ const Chat = ({ route, navigation }) => {
             backgroundColor: bubbleColor, // Set the bubble color
           },
           left: {
-            backgroundColor: "#FFF",
+            backgroundColor: '#FFF',
           },
         }}
       />
     );
   };
 
-  // Use useEffect to set the navigation options and preload messages
   useEffect(() => {
     navigation.setOptions({ title: name });
-
-    // Create a message to announce your entry
-    const entryMessage = {
-      _id: 3, // Use a unique ID for the message
-      text: `${name} has entered the chat`, // The entry message text
-      createdAt: new Date(),
-      system: true, // Mark it as a system message
+    const q = query(collection(db, 'messages'), orderBy('createdAt', 'desc'));
+    const unsubMessages = onSnapshot(q, (docs) => {
+      let newMessages = [];
+      docs.forEach((doc) => {
+        newMessages.push({
+          _id: doc.id,
+          ...doc.data(),
+          createdAt: new Date(doc.data().createdAt.toMillis()),
+        });
+      });
+      setMessages(newMessages);
+    });
+    return () => {
+      if (unsubMessages) unsubMessages();
     };
+  }, []);
 
-    // Initialize 'messages' state with user and entry messages when the component mounts
-    setMessages([
-      {
-        _id: 1,
-        text: "Hello developer",
-        createdAt: new Date(),
-        user: {
-          _id: 2,
-          name: "React Native",
-          avatar: "https://placeimg.com/140/140/any",
-        },
-      },
-      entryMessage, // Add the entry message to the state
-    ]);
-  }, [name]);
-
-  // Render the chat screen with dynamic background and text color
   return (
     <View style={[styles.container, { backgroundColor }]}>
       <GiftedChat
-        messages={messages} // Messages are passed from the 'messages' state
-        renderBubble={renderBubble} // Customized bubble rendering
-        onSend={(newMessages) => onSend(newMessages)} // Function to handle sending new messages
+        messages={messages}
+        renderBubble={renderBubble}
+        onSend={(newMessages) => onSend(newMessages)}
         user={{
-          _id: 1, // Can use a unique ID for the user
+          _id: route.params.userId, // Extract user ID from route.params
+          name: route.params.name, // Extract name from route.params
         }}
       />
-
-      {/* Keyboard behavior handling based on platform */}
-      {Platform.OS === "android" ? (
-        <KeyboardAvoidingView behavior="height" />
-      ) : Platform.OS === "ios" ? (
-        <KeyboardAvoidingView behavior="padding" />
-      ) : null}
     </View>
   );
 };
 
-// Styles for the components
 const styles = StyleSheet.create({
   container: {
-    flex: 1, // Allow the view to expand to 100% of the screen height
+    flex: 1,
   },
 });
 
