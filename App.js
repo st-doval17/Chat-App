@@ -8,6 +8,7 @@ import {
   enableNetwork,
 } from 'firebase/firestore'; // Import Firestore functions
 import { useNetInfo } from '@react-native-community/netinfo'; // Import useNetInfo
+import { Alert } from 'react-native'; // Import Alert
 
 import Start from './components/Start';
 import Chat from './components/Chat';
@@ -33,14 +34,14 @@ const App = () => {
   // Function to handle network connectivity changes
   useEffect(() => {
     if (!netInfo.isConnected) {
-      // Disable Firestore when there's no connection
+      // Show "Connection Lost" alert and disable Firestore when there's no connection
+      Alert.alert('Connection Lost!');
       disableNetwork(db);
     } else {
       // Enable Firestore when there's a connection
       enableNetwork(db);
     }
   }, [netInfo.isConnected, db]);
-
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName='Start'>
