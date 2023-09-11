@@ -1,8 +1,13 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore'; // Import Firestore functions
+import {
+  getFirestore,
+  disableNetwork,
+  enableNetwork,
+} from 'firebase/firestore'; // Import Firestore functions
+import { useNetInfo } from '@react-native-community/netinfo'; // Import useNetInfo
 
 import Start from './components/Start';
 import Chat from './components/Chat';
@@ -23,14 +28,28 @@ const App = () => {
   const db = getFirestore(app); // Initialize Firestore
 
   const Stack = createNativeStackNavigator();
+  const netInfo = useNetInfo(); // Use the useNetInfo hook to get network connectivity status
+
+  // Function to handle network connectivity changes
+  useEffect(() => {
+    if (!netInfo.isConnected) {
+      // Disable Firestore when there's no connection
+      disableNetwork(db);
+    } else {
+      // Enable Firestore when there's a connection
+      enableNetwork(db);
+    }
+  }, [netInfo.isConnected, db]);
 
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName='Start'>
         <Stack.Screen name='Start' component={Start} />
-        {/* Pass the Firestore database reference as 'database' prop to the Chat component */}
+        {/* Pass isConnected prop to the Chat component */}
         <Stack.Screen name='Chat'>
-          {(props) => <Chat {...props} database={db} />}
+          {(props) => (
+            <Chat {...props} database={db} isConnected={netInfo.isConnected} />
+          )}
         </Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>

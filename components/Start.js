@@ -6,15 +6,21 @@ import {
   TextInput,
   ImageBackground,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import backgroundImage from '../img/background.png';
 import { getAuth, signInAnonymously } from 'firebase/auth';
+import PropTypes from 'prop-types'; // Import PropTypes
 
 const Start = ({ navigation }) => {
   // State to manage user's name and selected background color
   const [name, setName] = useState('');
   const [backgroundColor, setBackgroundColor] = useState('#090C08'); // Default background color
   const [selectedColor, setSelectedColor] = useState('#090C08'); // Default selected color
+
+  Start.propTypes = {
+    navigation: PropTypes.object.isRequired, // Validate that 'navigation' is an object and is required
+  };
 
   // Function to set the background color
   const setChatBackgroundColor = (color) => {
@@ -27,6 +33,11 @@ const Start = ({ navigation }) => {
 
     try {
       // Sign in the user anonymously
+      await signInAnonymously(auth);
+      // Show a success message using Alert
+      Alert.alert('Signed in Successfully!');
+
+      // Rest of code to navigate to the Chat screen
       const userCredential = await signInAnonymously(auth);
       const user = userCredential.user;
 
@@ -37,6 +48,8 @@ const Start = ({ navigation }) => {
         backgroundColor: backgroundColor, // Selected background color
       });
     } catch (error) {
+      // Show an error message using Alert
+      Alert.alert('Unable to sign in, try again later.');
       console.error('Error logging in anonymously:', error);
     }
   };
@@ -103,7 +116,7 @@ const Start = ({ navigation }) => {
         {/* Button to start chatting */}
         <TouchableOpacity
           style={styles.startButton}
-          onPress={handleAnonymousLogin} // Use the handleAnonymousLogin function here
+          onPress={handleAnonymousLogin} // Use the handleAnonymousLogin function
           accessible={true}
           accessibilityLabel='Start Chatting'
           accessibilityHint='Logs in anonymously and navigates to the chat screen.'
