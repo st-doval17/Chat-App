@@ -28,7 +28,7 @@ const db = getFirestore(app);
 
 const Chat = ({ route, navigation, isConnected }) => {
   // Destructuring values from 'route.params'
-  const { name, backgroundColor, database } = route.params;
+  const { name, backgroundColor } = route.params;
 
   // PropTypes validation for the component's props
   Chat.propTypes = {
@@ -42,8 +42,9 @@ const Chat = ({ route, navigation, isConnected }) => {
     const message = newMessages[0];
     try {
       await addDoc(collection(db, 'messages'), message);
+
+      // Cache messages in AsyncStorage
       if (isConnected) {
-        // Cache messages in AsyncStorage when there's a connection
         const cachedMessages = [...messages, message];
         AsyncStorage.setItem('cachedMessages', JSON.stringify(cachedMessages));
       }
@@ -55,7 +56,7 @@ const Chat = ({ route, navigation, isConnected }) => {
   // State to manage chat messages
   const [messages, setMessages] = useState([]);
 
-  // Function to fetch messages from Firestore
+  // Function to fetch messages from Firestore and cache them
   const fetchMessagesFromFirestore = () => {
     const q = query(collection(db, 'messages'), orderBy('createdAt', 'desc'));
     return onSnapshot(q, (docs) => {
@@ -68,6 +69,11 @@ const Chat = ({ route, navigation, isConnected }) => {
         });
       });
       setMessages(newMessages);
+
+      // Cache messages in AsyncStorage
+      if (isConnected) {
+        AsyncStorage.setItem('cachedMessages', JSON.stringify(newMessages));
+      }
     });
   };
 
