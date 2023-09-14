@@ -9,6 +9,7 @@ import {
 } from 'firebase/firestore'; // Import Firestore functions
 import { useNetInfo } from '@react-native-community/netinfo'; // Import useNetInfo
 import { Alert } from 'react-native'; // Import Alert
+import { getStorage } from 'firebase/storage';
 
 import Start from './components/Start';
 import Chat from './components/Chat';
@@ -26,7 +27,8 @@ const App = () => {
 
   // Initialize Firebase
   const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app); // Initialize Firestore
+  const db = getFirestore(app);
+  const storage = getStorage(app);
 
   const Stack = createNativeStackNavigator();
   const netInfo = useNetInfo(); // Use the useNetInfo hook to get network connectivity status
@@ -34,11 +36,9 @@ const App = () => {
   // Function to handle network connectivity changes
   useEffect(() => {
     if (!netInfo.isConnected) {
-      // Show "Connection Lost" alert and disable Firestore when there's no connection
       Alert.alert('Connection Lost!');
       disableNetwork(db);
     } else {
-      // Enable Firestore when there's a connection
       enableNetwork(db);
     }
   }, [netInfo.isConnected, db]);
@@ -46,10 +46,14 @@ const App = () => {
     <NavigationContainer>
       <Stack.Navigator initialRouteName='Start'>
         <Stack.Screen name='Start' component={Start} />
-        {/* Pass isConnected prop to the Chat component */}
         <Stack.Screen name='Chat'>
           {(props) => (
-            <Chat {...props} database={db} isConnected={netInfo.isConnected} />
+            <Chat
+              isConnected={netInfo.isConnected}
+              db={db}
+              storage={storage}
+              {...props}
+            />
           )}
         </Stack.Screen>
       </Stack.Navigator>

@@ -1,17 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { GiftedChat, InputToolbar } from 'react-native-gifted-chat'; // Import InputToolbar
+import { GiftedChat, InputToolbar, Bubble } from 'react-native-gifted-chat';
 import {
-  addDoc,
   collection,
+  addDoc,
   query,
   orderBy,
   onSnapshot,
+  serverTimestamp,
 } from 'firebase/firestore';
 import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, Timestamp } from 'firebase/firestore'; // Import Timestamp from Firestore
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import PropTypes from 'prop-types'; // Import PropTypes
+import PropTypes from 'prop-types';
+import MapView from 'react-native-maps';
+import CustomActions from './CustomActions';
 
 // Initialize Firebase with your configuration
 const firebaseConfig = {
@@ -26,54 +29,86 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const Chat = ({ route, navigation, isConnected }) => {
+const Chat = ({ route, navigation, isConnected, storage }) => {
   // Destructuring values from 'route.params'
-  const { name, backgroundColor } = route.params;
+  const { name, backgroundColor, userId } = route.params;
 
   // PropTypes validation for the component's props
   Chat.propTypes = {
-    route: PropTypes.object.isRequired, // Validate that 'route' is an object and is required
-    navigation: PropTypes.object.isRequired, // Validate that 'navigation' is an object and is required
-    isConnected: PropTypes.bool.isRequired, // Validate that 'isConnected' is a boolean and is required
+    route: PropTypes.object.isRequired,
+    navigation: PropTypes.object.isRequired,
+    isConnected: PropTypes.bool.isRequired,
+    storage: PropTypes.object.isRequired,
+    currentMessage: PropTypes.object,
   };
 
-  // Function to handle sending new chat messages
   const onSend = async (newMessages) => {
     const message = newMessages[0];
     try {
-      await addDoc(collection(db, 'messages'), message);
+      if (message.text || message.image) {
+        // Check if the message contains text or an image
+        const messageData = {
+          ...message,
+          createdAt: serverTimestamp(),
+        };
 
-      // Cache messages in AsyncStorage
-      if (isConnected) {
-        const cachedMessages = [...messages, message];
-        AsyncStorage.setItem('cachedMessages', JSON.stringify(cachedMessages));
+        await addDoc(collection(db, 'messages'), messageData);
+
+        // Cache messages in AsyncStorage if needed
+        if (isConnected) {
+          const cachedMessages = [...messages, messageData];
+          AsyncStorage.setItem(
+            'cachedMessages',
+            JSON.stringify(cachedMessages)
+          );
+        }
       }
     } catch (error) {
       console.error('Error sending message:', error);
     }
   };
 
+  const renderCustomActions = (props) => {
+    return <CustomActions storage={storage} {...props} />;
+  };
+
   // State to manage chat messages
   const [messages, setMessages] = useState([]);
 
-  // Function to fetch messages from Firestore and cache them
+  // Function to fetch messages from Firestore
   const fetchMessagesFromFirestore = () => {
     const q = query(collection(db, 'messages'), orderBy('createdAt', 'desc'));
     return onSnapshot(q, (docs) => {
       let newMessages = [];
       docs.forEach((doc) => {
-        newMessages.push({
+        const messageData = {
           _id: doc.id,
           ...doc.data(),
-          createdAt: new Date(doc.data().createdAt.toMillis()),
-        });
+        };
+
+        // Check if 'createdAt' field exists and is a Firestore Timestamp
+        if (
+          messageData.createdAt instanceof Timestamp ||
+          messageData.createdAt === null
+        ) {
+          messageData.createdAt = messageData.createdAt
+            ? messageData.createdAt.toDate()
+            : new Date(); // Use the current date as a fallback
+        } else {
+          console.warn('Invalid createdAt field:', messageData.createdAt);
+        }
+
+        newMessages.push(messageData);
+
+        // Cache messages directly as they are loaded
+        if (isConnected) {
+          AsyncStorage.setItem(
+            'cachedMessages',
+            JSON.stringify([...messages, messageData])
+          );
+        }
       });
       setMessages(newMessages);
-
-      // Cache messages in AsyncStorage
-      if (isConnected) {
-        AsyncStorage.setItem('cachedMessages', JSON.stringify(newMessages));
-      }
     });
   };
 
@@ -118,17 +153,58 @@ const Chat = ({ route, navigation, isConnected }) => {
     }
   };
 
+  const renderBubble = (props) => {
+    return (
+      <Bubble
+        {...props}
+        wrapperStyle={{
+          right: {
+            backgroundColor: '#000',
+          },
+          left: {
+            backgroundColor: '#FFF',
+          },
+        }}
+      />
+    );
+  };
+
+  const renderCustomView = (props) => {
+    const { currentMessage } = props;
+    if (currentMessage.location) {
+      return (
+        <MapView
+          style={{
+            width: 150,
+            height: 100,
+            borderRadius: 13,
+            margin: 3,
+          }}
+          region={{
+            latitude: currentMessage.location.latitude,
+            longitude: currentMessage.location.longitude,
+            latitudeDelta: 0.0922,
+            longitudeDelta: 0.0421,
+          }}
+        />
+      );
+    }
+    return null;
+  };
+
   return (
     <View style={[styles.container, { backgroundColor }]}>
       <GiftedChat
         messages={messages}
         onSend={(newMessages) => onSend(newMessages)}
         user={{
-          _id: route.params.userId,
-          name: route.params.name,
+          _id: userId,
+          name: name,
         }}
-        // Pass the renderInputToolbar function as a prop
         renderInputToolbar={renderInputToolbar}
+        renderActions={(props) => renderCustomActions({ ...props, storage })}
+        renderBubble={renderBubble}
+        renderCustomView={renderCustomView}
       />
     </View>
   );
