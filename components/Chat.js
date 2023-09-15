@@ -7,16 +7,15 @@ import {
   query,
   orderBy,
   onSnapshot,
-  serverTimestamp,
 } from 'firebase/firestore';
 import { initializeApp } from 'firebase/app';
-import { getFirestore, Timestamp } from 'firebase/firestore'; // Import Timestamp from Firestore
+import { getFirestore, Timestamp } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import PropTypes from 'prop-types';
 import MapView from 'react-native-maps';
 import CustomActions from './CustomActions';
 
-// Initialize Firebase with your configuration
+// Initialize Firebase with own configuration
 const firebaseConfig = {
   apiKey: 'AIzaSyAx2DUa_kqFc92Vo47YkhiU3H3_EIJOKHc',
   authDomain: 'chat-app-83e48.firebaseapp.com',
@@ -45,23 +44,11 @@ const Chat = ({ route, navigation, isConnected, storage }) => {
   const onSend = async (newMessages) => {
     const message = newMessages[0];
     try {
-      if (message.text || message.image) {
-        // Check if the message contains text or an image
-        const messageData = {
-          ...message,
-          createdAt: serverTimestamp(),
-        };
-
-        await addDoc(collection(db, 'messages'), messageData);
-
-        // Cache messages in AsyncStorage if needed
-        if (isConnected) {
-          const cachedMessages = [...messages, messageData];
-          AsyncStorage.setItem(
-            'cachedMessages',
-            JSON.stringify(cachedMessages)
-          );
-        }
+      await addDoc(collection(db, 'messages'), message);
+      if (isConnected) {
+        // Cache messages in AsyncStorage when there's a connection
+        const cachedMessages = [...messages, message];
+        AsyncStorage.setItem('cachedMessages', JSON.stringify(cachedMessages));
       }
     } catch (error) {
       console.error('Error sending message:', error);
@@ -86,14 +73,13 @@ const Chat = ({ route, navigation, isConnected, storage }) => {
           ...doc.data(),
         };
 
-        // Check if 'createdAt' field exists and is a Firestore Timestamp
         if (
           messageData.createdAt instanceof Timestamp ||
           messageData.createdAt === null
         ) {
           messageData.createdAt = messageData.createdAt
             ? messageData.createdAt.toDate()
-            : new Date(); // Use the current date as a fallback
+            : new Date();
         } else {
           console.warn('Invalid createdAt field:', messageData.createdAt);
         }

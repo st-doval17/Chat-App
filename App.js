@@ -6,9 +6,9 @@ import {
   getFirestore,
   disableNetwork,
   enableNetwork,
-} from 'firebase/firestore'; // Import Firestore functions
-import { useNetInfo } from '@react-native-community/netinfo'; // Import useNetInfo
-import { Alert } from 'react-native'; // Import Alert
+} from 'firebase/firestore';
+import { useNetInfo } from '@react-native-community/netinfo';
+import { Alert } from 'react-native';
 import { getStorage } from 'firebase/storage';
 
 import Start from './components/Start';
@@ -42,6 +42,7 @@ const App = () => {
       enableNetwork(db);
     }
   }, [netInfo.isConnected, db]);
+
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName='Start'>

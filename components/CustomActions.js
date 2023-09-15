@@ -6,6 +6,7 @@ import * as Location from 'expo-location';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import PropTypes from 'prop-types';
 
+// Define the CustomActions component
 const CustomActions = ({
   wrapperStyle,
   iconTextStyle,
@@ -15,12 +16,14 @@ const CustomActions = ({
 }) => {
   const actionSheet = useActionSheet();
 
+  // Function to generate a unique reference for uploaded images
   const generateReference = (uri) => {
     const timeStamp = new Date().getTime();
     const imageName = uri.split('/')[uri.split('/').length - 1];
     return `${userID}-${timeStamp}-${imageName}`;
   };
 
+  // Function to upload and send an image
   const uploadAndSendImage = async (imageURI) => {
     const uniqueRefString = generateReference(imageURI);
     const newUploadRef = ref(storage, uniqueRefString);
@@ -32,6 +35,7 @@ const CustomActions = ({
     });
   };
 
+  // Function to handle the action sheet button press
   const onActionPress = async () => {
     const options = [
       'Choose From Library',
@@ -62,6 +66,7 @@ const CustomActions = ({
     );
   };
 
+  // Function to pick an image from the library
   const pickImage = async () => {
     let permissions = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (permissions?.granted) {
@@ -71,6 +76,7 @@ const CustomActions = ({
     }
   };
 
+  // Function to take a photo using the camera
   const takePhoto = async () => {
     let permissions = await ImagePicker.requestCameraPermissionsAsync();
     if (permissions?.granted) {
@@ -80,6 +86,7 @@ const CustomActions = ({
     }
   };
 
+  // Function to get the device's current location
   const getLocation = async () => {
     let permissions = await Location.requestForegroundPermissionsAsync();
     if (permissions?.granted) {
@@ -95,6 +102,7 @@ const CustomActions = ({
     } else Alert.alert("Permissions haven't been granted.");
   };
 
+  // PropTypes validation for component props
   CustomActions.propTypes = {
     wrapperStyle: PropTypes.object,
     iconTextStyle: PropTypes.object,
@@ -102,6 +110,7 @@ const CustomActions = ({
     onSend: PropTypes.func.isRequired,
   };
 
+  // Render the CustomActions component
   return (
     <TouchableOpacity style={styles.container} onPress={onActionPress}>
       <View style={[styles.wrapper, wrapperStyle]}>
@@ -111,6 +120,7 @@ const CustomActions = ({
   );
 };
 
+// Styles for the CustomActions component
 const styles = StyleSheet.create({
   container: {
     width: 26,
