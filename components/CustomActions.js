@@ -48,6 +48,7 @@ const CustomActions = ({
       {
         options,
         cancelButtonIndex,
+        title: 'Select an Option',
       },
       async (buttonIndex) => {
         switch (buttonIndex) {
